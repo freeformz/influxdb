@@ -82,10 +82,10 @@ func (self *WriteBuffer) handleWrites() {
 }
 
 func (self *WriteBuffer) write(request *protocol.Request) {
-	attempts := 0
-	for {
+	var err error
+	for attempts := 0; attempts < 100; attempts++ {
 		self.shardIds[*request.ShardId] = true
-		err := self.writer.Write(request)
+		err = self.writer.Write(request)
 		if err == nil {
 			requestNumber := request.RequestNumber
 			if requestNumber == nil {
@@ -97,13 +97,10 @@ func (self *WriteBuffer) write(request *protocol.Request) {
 			self.wal.Commit(*requestNumber, self.serverId)
 			return
 		}
-		if attempts%100 == 0 {
-			log.Error("%s: WriteBuffer: error on write to server %d: %s", self.writerInfo, self.serverId, err)
-		}
-		attempts += 1
 		// backoff happens in the writer, just sleep for a small fixed amount of time before retrying
 		time.Sleep(time.Millisecond * 100)
 	}
+	log.Error("%s: WriteBuffer: error on write to server %d: %s", self.writerInfo, self.serverId, err)
 }
 
 func (self *WriteBuffer) replayAndRecover(missedRequest uint32) {

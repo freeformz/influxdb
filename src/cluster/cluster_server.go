@@ -95,6 +95,7 @@ func (self *ClusterServer) Connect() {
 func (self *ClusterServer) MakeRequest(request *protocol.Request, responseStream chan *protocol.Response) {
 	err := self.connection.MakeRequest(request, responseStream)
 	if err != nil {
+		log.Info("ClusterServer MakeRequest Error: ", err)
 		message := err.Error()
 		select {
 		case responseStream <- &protocol.Response{Type: &endStreamResponse, ErrorMessage: &message}:
@@ -108,11 +109,13 @@ func (self *ClusterServer) Write(request *protocol.Request) error {
 	responseChan := make(chan *protocol.Response, 1)
 	err := self.connection.MakeRequest(request, responseChan)
 	if err != nil {
+		log.Info("MakeRequest Error: ", err)
 		return err
 	}
 	log.Debug("Waiting for response to %d", request.GetRequestNumber())
 	response := <-responseChan
 	if response.ErrorMessage != nil {
+		log.Info("ResponseInfo: ", errors.New(*response.ErrorMessage))
 		return errors.New(*response.ErrorMessage)
 	}
 	return nil
@@ -179,6 +182,7 @@ func (self *ClusterServer) getHeartbeatResponse(responseChan <-chan *protocol.Re
 }
 
 func (self *ClusterServer) markServerAsDown() {
+	log.Info("markServerAsDown")
 	self.isUp = false
 	self.connection.ClearRequests()
 }

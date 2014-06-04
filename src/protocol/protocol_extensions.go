@@ -120,9 +120,9 @@ func (self *Response) Size() int {
 	return proto.Size(self)
 }
 
-func DecodeResponse(buff *bytes.Buffer) (response *Response, err error) {
+func DecodeResponse(buff []byte) (response *Response, err error) {
 	response = &Response{}
-	err = proto.Unmarshal(buff.Bytes(), response)
+	err = proto.Unmarshal(buff, response)
 	return
 }
 
